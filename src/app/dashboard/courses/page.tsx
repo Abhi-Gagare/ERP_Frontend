@@ -25,7 +25,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     api.programs.list("", "ACTIVE", 0).then((res) => {
-      const progs = res.content.flatMap((d) => d.programs ?? []);
+      const progs = res.content.flatMap((d) => d.degrees ?? []);
       setProgramOptions([...new Set(progs)].sort());
     }).catch(() => {});
   }, []);

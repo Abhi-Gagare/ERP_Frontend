@@ -122,7 +122,7 @@ export interface ProgramData {
   deanName: string | null;
   deanEmail: string | null;
   deanPhone: string | null;
-  programs: string[];
+  degrees: string[];
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   updatedAt: string;

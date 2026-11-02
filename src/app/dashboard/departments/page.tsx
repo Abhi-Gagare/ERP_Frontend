@@ -16,14 +16,12 @@ const CARD_COLORS = [
 
 const EMPTY_FORM = {
   code: "", name: "", description: "", deanName: "", deanEmail: "", deanPhone: "",
-  programs: "", status: "ACTIVE",
+  status: "ACTIVE",
 };
 
 type FormState = typeof EMPTY_FORM;
 
-function Modal({
-  title, onClose, children,
-}: { title: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -37,7 +35,7 @@ function Modal({
   );
 }
 
-function DeptForm({
+function ProgramForm({
   form, setForm, onSubmit, submitting, error, submitLabel, codeDisabled = false,
 }: {
   form: FormState;
@@ -80,7 +78,7 @@ function DeptForm({
         <label className="block text-xs font-medium text-slate-600 mb-1">Program Name *</label>
         <input
           required value={form.name} onChange={(e) => set("name", e.target.value)}
-          placeholder="Computer Science"
+          placeholder="B.Tech"
           className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       </div>
@@ -92,16 +90,6 @@ function DeptForm({
           rows={2} placeholder="Brief description…"
           className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
         />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Degree Offerings (comma-separated)</label>
-        <input
-          value={form.programs} onChange={(e) => set("programs", e.target.value)}
-          placeholder="B.Tech, M.Tech, Ph.D"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        />
-        <p className="text-xs text-slate-400 mt-1">Degree levels offered under this program</p>
       </div>
 
       <div className="border-t border-slate-100 pt-4">
@@ -139,8 +127,8 @@ function DeptForm({
   );
 }
 
-export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<ProgramData[]>([]);
+export default function ProgramsPage() {
+  const [programs, setPrograms] = useState<ProgramData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -148,19 +136,19 @@ export default function DepartmentsPage() {
   const [totalElements, setTotalElements] = useState(0);
 
   const [showCreate, setShowCreate] = useState(false);
-  const [editDept, setEditDept] = useState<ProgramData | null>(null);
-  const [deleteDept, setDeleteDept] = useState<ProgramData | null>(null);
+  const [editProg, setEditProg] = useState<ProgramData | null>(null);
+  const [deleteProg, setDeleteProg] = useState<ProgramData | null>(null);
 
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  async function fetchDepts() {
+  async function fetchPrograms() {
     setLoading(true);
     try {
       const res = await api.programs.list(search, "", page);
-      setDepartments(res.content);
+      setPrograms(res.content);
       setTotalPages(res.totalPages);
       setTotalElements(res.totalElements);
     } catch (e) {
@@ -170,7 +158,7 @@ export default function DepartmentsPage() {
     }
   }
 
-  useEffect(() => { fetchDepts(); }, [search, page]);
+  useEffect(() => { fetchPrograms(); }, [search, page]);
 
   function openCreate() {
     setForm({ ...EMPTY_FORM });
@@ -178,23 +166,18 @@ export default function DepartmentsPage() {
     setShowCreate(true);
   }
 
-  function openEdit(d: ProgramData) {
+  function openEdit(p: ProgramData) {
     setForm({
-      code: d.code,
-      name: d.name,
-      description: d.description ?? "",
-      deanName: d.deanName ?? "",
-      deanEmail: d.deanEmail ?? "",
-      deanPhone: d.deanPhone ?? "",
-      programs: (d.programs ?? []).join(", "),
-      status: d.status,
+      code: p.code,
+      name: p.name,
+      description: p.description ?? "",
+      deanName: p.deanName ?? "",
+      deanEmail: p.deanEmail ?? "",
+      deanPhone: p.deanPhone ?? "",
+      status: p.status,
     });
     setFormError("");
-    setEditDept(d);
-  }
-
-  function parsePrograms(raw: string): string[] {
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    setEditProg(p);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -202,12 +185,9 @@ export default function DepartmentsPage() {
     setFormError("");
     setSubmitting(true);
     try {
-      await api.programs.create({
-        ...form,
-        programs: parsePrograms(form.programs),
-      });
+      await api.programs.create({ ...form });
       setShowCreate(false);
-      fetchDepts();
+      fetchPrograms();
     } catch (err: unknown) {
       const e = err as { message?: string };
       setFormError(e?.message ?? "Failed to create program");
@@ -218,16 +198,13 @@ export default function DepartmentsPage() {
 
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
-    if (!editDept) return;
+    if (!editProg) return;
     setFormError("");
     setSubmitting(true);
     try {
-      await api.programs.update(editDept.code, {
-        ...form,
-        programs: parsePrograms(form.programs),
-      });
-      setEditDept(null);
-      fetchDepts();
+      await api.programs.update(editProg.code, { ...form });
+      setEditProg(null);
+      fetchPrograms();
     } catch (err: unknown) {
       const e = err as { message?: string };
       setFormError(e?.message ?? "Failed to update program");
@@ -237,12 +214,12 @@ export default function DepartmentsPage() {
   }
 
   async function handleDelete() {
-    if (!deleteDept) return;
+    if (!deleteProg) return;
     setDeleteLoading(true);
     try {
-      await api.programs.delete(deleteDept.code);
-      setDeleteDept(null);
-      fetchDepts();
+      await api.programs.delete(deleteProg.code);
+      setDeleteProg(null);
+      fetchPrograms();
     } catch (err: unknown) {
       console.error(err);
     } finally {
@@ -250,14 +227,12 @@ export default function DepartmentsPage() {
     }
   }
 
-  const totalOfferings = departments.reduce((s, d) => s + (d.programs?.length ?? 0), 0);
-
   return (
     <div className="w-full p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Programs</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage academic programs and their offerings</p>
+          <p className="text-slate-500 text-sm mt-1">Manage academic programs and the degrees they offer</p>
         </div>
         <button
           onClick={openCreate}
@@ -268,11 +243,10 @@ export default function DepartmentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         {[
           { label: "Programs", value: totalElements },
-          { label: "Active", value: departments.filter((d) => d.status === "ACTIVE").length },
-          { label: "Degree Offerings", value: totalOfferings },
+          { label: "Active", value: programs.filter((p) => p.status === "ACTIVE").length },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5">
             <p className="text-xs text-slate-500 uppercase tracking-wide">{s.label}</p>
@@ -295,7 +269,7 @@ export default function DepartmentsPage() {
       {/* Cards */}
       {loading ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400">Loading…</div>
-      ) : departments.length === 0 ? (
+      ) : programs.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
           <p className="text-slate-400 text-lg">No programs yet</p>
           <button onClick={openCreate} className="mt-3 text-indigo-600 text-sm hover:underline">
@@ -304,62 +278,40 @@ export default function DepartmentsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {departments.map((dept, i) => (
-            <div key={dept.id} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
+          {programs.map((prog, i) => (
+            <div key={prog.id} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-11 h-11 rounded-xl border-2 flex items-center justify-center font-bold text-sm shrink-0 ${CARD_COLORS[i % CARD_COLORS.length]}`}>
-                    {dept.code}
+                    {prog.code}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-slate-800">{dept.name}</h3>
-                      {dept.status === "INACTIVE" && (
+                      <h3 className="font-semibold text-slate-800">{prog.name}</h3>
+                      {prog.status === "INACTIVE" && (
                         <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Inactive</span>
                       )}
                     </div>
-                    {dept.deanName && (
-                      <p className="text-xs text-slate-400 mt-0.5">Dean: {dept.deanName}</p>
+                    {prog.deanName && (
+                      <p className="text-xs text-slate-400 mt-0.5">Dean: {prog.deanName}</p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => openEdit(dept)}
-                    className="text-xs text-indigo-600 hover:underline font-medium"
-                  >
-                    Edit
-                  </button>
+                  <button onClick={() => openEdit(prog)} className="text-xs text-indigo-600 hover:underline font-medium">Edit</button>
                   <span className="text-slate-200">|</span>
-                  <button
-                    onClick={() => setDeleteDept(dept)}
-                    className="text-xs text-red-400 hover:text-red-600 font-medium"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => setDeleteProg(prog)} className="text-xs text-red-400 hover:text-red-600 font-medium">Delete</button>
                 </div>
               </div>
 
-              {dept.description && (
-                <p className="text-xs text-slate-500 mb-3 leading-relaxed line-clamp-2">{dept.description}</p>
+              {prog.description && (
+                <p className="text-xs text-slate-500 mb-3 leading-relaxed line-clamp-2">{prog.description}</p>
               )}
 
-              {dept.programs && dept.programs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {dept.programs.map((p) => (
-                    <span key={p} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-medium">{p}</span>
-                  ))}
-                </div>
-              )}
-
-              {(dept.deanEmail || dept.deanPhone) && (
+              {(prog.deanEmail || prog.deanPhone) && (
                 <div className="flex gap-4 border-t border-slate-100 pt-3">
-                  {dept.deanEmail && (
-                    <span className="text-xs text-slate-400 truncate max-w-[200px]">{dept.deanEmail}</span>
-                  )}
-                  {dept.deanPhone && (
-                    <span className="text-xs text-slate-400">{dept.deanPhone}</span>
-                  )}
+                  {prog.deanEmail && <span className="text-xs text-slate-400 truncate max-w-[200px]">{prog.deanEmail}</span>}
+                  {prog.deanPhone && <span className="text-xs text-slate-400">{prog.deanPhone}</span>}
                 </div>
               )}
             </div>
@@ -372,16 +324,10 @@ export default function DepartmentsPage() {
         <div className="mt-4 flex items-center justify-between">
           <span className="text-xs text-slate-500">Page {page + 1} of {totalPages}</span>
           <div className="flex gap-2">
-            <button
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1 rounded border border-slate-200 text-xs disabled:opacity-40 hover:bg-slate-50"
-            >← Prev</button>
-            <button
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 rounded border border-slate-200 text-xs disabled:opacity-40 hover:bg-slate-50"
-            >Next →</button>
+            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1 rounded border border-slate-200 text-xs disabled:opacity-40 hover:bg-slate-50">← Prev</button>
+            <button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}
+              className="px-3 py-1 rounded border border-slate-200 text-xs disabled:opacity-40 hover:bg-slate-50">Next →</button>
           </div>
         </div>
       )}
@@ -389,46 +335,32 @@ export default function DepartmentsPage() {
       {/* Create modal */}
       {showCreate && (
         <Modal title="Add Program" onClose={() => setShowCreate(false)}>
-          <DeptForm
-            form={form} setForm={setForm}
-            onSubmit={handleCreate} submitting={submitting}
-            error={formError} submitLabel="Create Program"
-          />
+          <ProgramForm form={form} setForm={setForm} onSubmit={handleCreate}
+            submitting={submitting} error={formError} submitLabel="Create Program" />
         </Modal>
       )}
 
       {/* Edit modal */}
-      {editDept && (
-        <Modal title={`Edit — ${editDept.name}`} onClose={() => setEditDept(null)}>
-          <DeptForm
-            form={form} setForm={setForm}
-            onSubmit={handleEdit} submitting={submitting}
-            error={formError} submitLabel="Save Changes"
-            codeDisabled
-          />
+      {editProg && (
+        <Modal title={`Edit — ${editProg.name}`} onClose={() => setEditProg(null)}>
+          <ProgramForm form={form} setForm={setForm} onSubmit={handleEdit}
+            submitting={submitting} error={formError} submitLabel="Save Changes" codeDisabled />
         </Modal>
       )}
 
       {/* Delete confirm */}
-      {deleteDept && (
+      {deleteProg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h2 className="text-base font-semibold text-slate-800 mb-2">Delete Program</h2>
             <p className="text-sm text-slate-500 mb-6">
-              Are you sure you want to delete <span className="font-medium text-slate-700">{deleteDept.name}</span>? This cannot be undone.
+              Are you sure you want to delete <span className="font-medium text-slate-700">{deleteProg.name}</span>? This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteDept(null)}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteLoading}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-              >
+              <button onClick={() => setDeleteProg(null)}
+                className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleDelete} disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                 {deleteLoading ? "Deleting…" : "Delete"}
               </button>
             </div>

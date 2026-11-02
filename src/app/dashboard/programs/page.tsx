@@ -15,8 +15,8 @@ const CARD_COLORS = [
 ];
 
 const EMPTY_FORM = {
-  code: "", name: "", description: "", hodName: "", hodEmail: "", hodPhone: "",
-  totalSeats: "", programs: "", status: "ACTIVE",
+  code: "", name: "", description: "", deanName: "", deanEmail: "", deanPhone: "",
+  programs: "", status: "ACTIVE",
 };
 
 type FormState = typeof EMPTY_FORM;
@@ -95,40 +95,31 @@ function DeptForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Programs (comma-separated)</label>
+        <label className="block text-xs font-medium text-slate-600 mb-1">Degree Offerings (comma-separated)</label>
         <input
           value={form.programs} onChange={(e) => set("programs", e.target.value)}
           placeholder="B.Tech, M.Tech, Ph.D"
           className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-slate-600 mb-1">Total Seats *</label>
-        <input
-          required type="number" min={0} value={form.totalSeats}
-          onChange={(e) => set("totalSeats", e.target.value)}
-          placeholder="240"
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        />
+        <p className="text-xs text-slate-400 mt-1">Degree levels offered under this program</p>
       </div>
 
       <div className="border-t border-slate-100 pt-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Head of Program</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Dean</p>
         <div className="grid grid-cols-1 gap-3">
           <input
-            value={form.hodName} onChange={(e) => set("hodName", e.target.value)}
+            value={form.deanName} onChange={(e) => set("deanName", e.target.value)}
             placeholder="Dr. Full Name"
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           <div className="grid grid-cols-2 gap-3">
             <input
-              value={form.hodEmail} onChange={(e) => set("hodEmail", e.target.value)}
-              placeholder="hod@university.edu"
+              value={form.deanEmail} onChange={(e) => set("deanEmail", e.target.value)}
+              placeholder="dean@university.edu"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             <input
-              value={form.hodPhone} onChange={(e) => set("hodPhone", e.target.value)}
+              value={form.deanPhone} onChange={(e) => set("deanPhone", e.target.value)}
               placeholder="+91 XXXXX XXXXX"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
@@ -192,10 +183,9 @@ export default function DepartmentsPage() {
       code: d.code,
       name: d.name,
       description: d.description ?? "",
-      hodName: d.hodName ?? "",
-      hodEmail: d.hodEmail ?? "",
-      hodPhone: d.hodPhone ?? "",
-      totalSeats: String(d.totalSeats),
+      deanName: d.deanName ?? "",
+      deanEmail: d.deanEmail ?? "",
+      deanPhone: d.deanPhone ?? "",
       programs: (d.programs ?? []).join(", "),
       status: d.status,
     });
@@ -214,7 +204,6 @@ export default function DepartmentsPage() {
     try {
       await api.programs.create({
         ...form,
-        totalSeats: Number(form.totalSeats),
         programs: parsePrograms(form.programs),
       });
       setShowCreate(false);
@@ -235,7 +224,6 @@ export default function DepartmentsPage() {
     try {
       await api.programs.update(editDept.code, {
         ...form,
-        totalSeats: Number(form.totalSeats),
         programs: parsePrograms(form.programs),
       });
       setEditDept(null);
@@ -262,8 +250,7 @@ export default function DepartmentsPage() {
     }
   }
 
-  const totalSeats = departments.reduce((s, d) => s + d.totalSeats, 0);
-  const totalPrograms = departments.reduce((s, d) => s + (d.programs?.length ?? 0), 0);
+  const totalOfferings = departments.reduce((s, d) => s + (d.programs?.length ?? 0), 0);
 
   return (
     <div className="w-full p-8">
@@ -281,12 +268,11 @@ export default function DepartmentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {[
           { label: "Programs", value: totalElements },
           { label: "Active", value: departments.filter((d) => d.status === "ACTIVE").length },
-          { label: "Offerings", value: totalPrograms },
-          { label: "Total Seats", value: totalSeats.toLocaleString() },
+          { label: "Degree Offerings", value: totalOfferings },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5">
             <p className="text-xs text-slate-500 uppercase tracking-wide">{s.label}</p>
@@ -332,8 +318,8 @@ export default function DepartmentsPage() {
                         <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Inactive</span>
                       )}
                     </div>
-                    {dept.hodName && (
-                      <p className="text-xs text-slate-400 mt-0.5">HoD: {dept.hodName}</p>
+                    {dept.deanName && (
+                      <p className="text-xs text-slate-400 mt-0.5">Dean: {dept.deanName}</p>
                     )}
                   </div>
                 </div>
@@ -366,20 +352,16 @@ export default function DepartmentsPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-3">
-                <div className="flex gap-4">
-                  {dept.hodEmail && (
-                    <span className="text-xs text-slate-400 truncate max-w-[140px]">{dept.hodEmail}</span>
+              {(dept.deanEmail || dept.deanPhone) && (
+                <div className="flex gap-4 border-t border-slate-100 pt-3">
+                  {dept.deanEmail && (
+                    <span className="text-xs text-slate-400 truncate max-w-[200px]">{dept.deanEmail}</span>
                   )}
-                  {dept.hodPhone && (
-                    <span className="text-xs text-slate-400">{dept.hodPhone}</span>
+                  {dept.deanPhone && (
+                    <span className="text-xs text-slate-400">{dept.deanPhone}</span>
                   )}
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-slate-400">Seats: </span>
-                  <span className="text-sm font-semibold text-slate-700">{dept.totalSeats}</span>
-                </div>
-              </div>
+              )}
             </div>
           ))}
         </div>

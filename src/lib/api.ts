@@ -119,10 +119,9 @@ export interface ProgramData {
   code: string;
   name: string;
   description: string | null;
-  hodName: string | null;
-  hodEmail: string | null;
-  hodPhone: string | null;
-  totalSeats: number;
+  deanName: string | null;
+  deanEmail: string | null;
+  deanPhone: string | null;
   programs: string[];
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;

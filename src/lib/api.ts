@@ -129,6 +129,25 @@ export interface ProgramData {
   updatedAt: string;
 }
 
+export interface StudentData {
+  id: number;
+  rollNumber: string;
+  fullName: string;
+  email: string;
+  program: string;
+  semester: number;
+  batchYear: number;
+  dateOfBirth: string | null;
+  phone: string | null;
+  address: string | null;
+  guardianName: string | null;
+  guardianPhone: string | null;
+  enrollmentDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CourseFeeComponent {
   id: number;
   feeType: string;
@@ -256,6 +275,18 @@ export const api = {
 
     admissionsSummary: (limit = 20) =>
       request<AdmissionFeeSummary[]>(`/fees/admissions-summary?limit=${limit}`),
+  },
+
+  students: {
+    list: (search = "", program = "", active?: boolean, page = 0) => {
+      const activeParam = active !== undefined ? `&active=${active}` : "";
+      return request<PageResponse<StudentData>>(
+        `/students?search=${encodeURIComponent(search)}&program=${encodeURIComponent(program)}${activeParam}&page=${page}&size=20`
+      );
+    },
+
+    get: (rollNumber: string) =>
+      request<StudentData>(`/students/${rollNumber}`),
   },
 
   admissions: {

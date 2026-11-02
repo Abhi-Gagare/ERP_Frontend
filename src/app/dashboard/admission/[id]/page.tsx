@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { api, AdmissionData } from "@/lib/api";
+import { api, AdmissionData, StudentData } from "@/lib/api";
 
 function Row({ label, value, full }: { label: string; value?: string | number | null; full?: boolean }) {
   return (
@@ -32,13 +32,21 @@ const statusStyle: Record<string, string> = {
 
 export default function AdmissionViewPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData]     = useState<AdmissionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState<string | null>(null);
+  const [data, setData]         = useState<AdmissionData | null>(null);
+  const [student, setStudent]   = useState<StudentData | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
 
   useEffect(() => {
     api.admissions.get(id)
-      .then(setData)
+      .then((admission) => {
+        setData(admission);
+        if (admission.status === "APPROVED") {
+          api.students.list(admission.email, "", undefined, 0)
+            .then((res) => { if (res.content.length > 0) setStudent(res.content[0]); })
+            .catch(() => {});
+        }
+      })
       .catch(() => setError("Admission not found."))
       .finally(() => setLoading(false));
   }, [id]);
@@ -82,6 +90,21 @@ export default function AdmissionViewPage() {
           Print / PDF
         </button>
       </div>
+
+      {/* Student provisioned banner */}
+      {data.status === "APPROVED" && student && (
+        <div className="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <svg className="w-5 h-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1 text-sm text-green-800">
+            Student record created — Roll No. <strong className="font-mono">{student.rollNumber}</strong>
+          </div>
+          <Link href="/dashboard/students" className="text-xs text-green-700 font-medium hover:underline">
+            View in Students →
+          </Link>
+        </div>
+      )}
 
       {/* Form */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">

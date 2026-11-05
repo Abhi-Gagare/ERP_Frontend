@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ProgramData } from "@/lib/api";
 
 const LEVEL_OPTIONS = ["Undergraduate", "Postgraduate", "Doctoral", "Diploma", "Certificate"];
 const MODE_OPTIONS = ["Full-time", "Part-time", "Online", "Hybrid"];
@@ -16,7 +16,6 @@ export default function NewCoursePage() {
     name: "",
     description: "",
     program: "",
-    credits: "",
     durationMonths: "",
     level: LEVEL_OPTIONS[0],
     mode: MODE_OPTIONS[0],
@@ -24,6 +23,16 @@ export default function NewCoursePage() {
     availableSeats: "",
     status: "ACTIVE",
   });
+
+  const [programs, setPrograms] = useState<ProgramData[]>([]);
+  const [programsLoaded, setProgramsLoaded] = useState(false);
+
+  useEffect(() => {
+    api.programs.list("", "", 0)
+      .then((res) => { setPrograms(res.content); })
+      .catch(() => {})
+      .finally(() => setProgramsLoaded(true));
+  }, []);
 
   const setField = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -34,7 +43,6 @@ export default function NewCoursePage() {
     try {
       const payload = {
         ...form,
-        credits: Number(form.credits),
         durationMonths: Number(form.durationMonths),
         totalSeats: Number(form.totalSeats),
         availableSeats: Number(form.availableSeats),
@@ -88,13 +96,23 @@ export default function NewCoursePage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Program *</label>
-              <input
-                required
-                value={form.program}
-                onChange={(e) => setField("program", e.target.value)}
-                placeholder="B.Tech, M.Tech, MBA…"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
+              {!programsLoaded ? (
+                <div className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-400 bg-slate-50">
+                  Loading programs…
+                </div>
+              ) : (
+                <select
+                  required
+                  value={form.program}
+                  onChange={(e) => setField("program", e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  <option value="">Select program…</option>
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
@@ -127,16 +145,6 @@ export default function NewCoursePage() {
               >
                 {MODE_OPTIONS.map((m) => <option key={m}>{m}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Credits *</label>
-              <input
-                required type="number" min={1}
-                value={form.credits}
-                onChange={(e) => setField("credits", e.target.value)}
-                placeholder="4"
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Duration (months) *</label>

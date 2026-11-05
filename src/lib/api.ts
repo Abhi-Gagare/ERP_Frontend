@@ -34,8 +34,20 @@ async function request<T>(
     },
   });
 
-  const data = await res.json();
-  if (!res.ok) throw data as ApiError;
+  if (res.status === 401 || res.status === 403) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    throw { status: res.status, message: "Session expired. Please log in again.", errors: [] } as ApiError;
+  }
+
+  const contentType = res.headers.get("content-type") ?? "";
+  const hasBody = contentType.includes("application/json") || contentType.includes("text/");
+  const data = hasBody ? await res.json() : undefined;
+  if (!res.ok) throw (data ?? { status: res.status, message: res.statusText, errors: [] }) as ApiError;
   return data as T;
 }
 
@@ -176,6 +188,47 @@ export interface CourseData {
   updatedAt: string;
 }
 
+export interface SubjectData {
+  id: number;
+  subjectCode: string;
+  name: string;
+  description: string | null;
+  course: string;
+  semester: number;
+  year: number;
+  credits: number;
+  type: string;
+  facultyName: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceRecord {
+  id: number;
+  studentId: number;
+  rollNumber: string;
+  studentName: string;
+  subjectCode: string;
+  subjectName: string;
+  date: string;
+  timeSlot: string;
+  status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+  remarks: string | null;
+  markedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceSummary {
+  studentId: number;
+  rollNumber: string;
+  name: string;
+  present: number;
+  total: number;
+  percentage: number;
+}
+
 export const api = {
   programs: {
     create: (data: Record<string, unknown>) =>
@@ -299,5 +352,45 @@ export const api = {
 
     get: (admissionId: string) =>
       request<AdmissionData>(`/admissions/${admissionId}`),
+  },
+
+  attendance: {
+    mark: (data: Record<string, unknown>) =>
+      request<AttendanceRecord[]>("/attendance", { method: "POST", body: JSON.stringify(data) }),
+
+    session: (program: string, batchYear: number | undefined, subjectCode: string, date: string, timeSlot: string) => {
+      const byParam = batchYear !== undefined ? `&batchYear=${batchYear}` : "";
+      return request<AttendanceRecord[]>(
+        `/attendance/session?program=${encodeURIComponent(program)}${byParam}&subjectCode=${encodeURIComponent(subjectCode)}&date=${date}&timeSlot=${encodeURIComponent(timeSlot)}`
+      );
+    },
+
+    summary: (program: string, batchYear: number | undefined, subjectCode: string) => {
+      const byParam = batchYear !== undefined ? `&batchYear=${batchYear}` : "";
+      return request<AttendanceSummary[]>(
+        `/attendance/summary?program=${encodeURIComponent(program)}${byParam}&subjectCode=${encodeURIComponent(subjectCode)}`
+      );
+    },
+  },
+
+  subjects: {
+    create: (data: Record<string, unknown>) =>
+      request<SubjectData>("/subjects", { method: "POST", body: JSON.stringify(data) }),
+
+    list: (search = "", course = "", semester?: number, year?: number, status = "", page = 0) => {
+      const semParam  = semester !== undefined ? `&semester=${semester}` : "";
+      const yearParam = year     !== undefined ? `&year=${year}`         : "";
+      return request<PageResponse<SubjectData>>(
+        `/subjects?search=${encodeURIComponent(search)}&course=${encodeURIComponent(course)}${semParam}${yearParam}&status=${status}&page=${page}&size=50`
+      );
+    },
+
+    get: (id: number) => request<SubjectData>(`/subjects/${id}`),
+
+    update: (id: number, data: Record<string, unknown>) =>
+      request<SubjectData>(`/subjects/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+
+    delete: (id: number) =>
+      request<void>(`/subjects/${id}`, { method: "DELETE" }),
   },
 };

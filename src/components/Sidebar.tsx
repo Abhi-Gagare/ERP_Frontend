@@ -28,9 +28,10 @@ const navItems: NavItem[] = [
       </svg>
     ),
     children: [
-      { label: "Overview", href: "/dashboard/academics" },
-      { label: "Courses", href: "/dashboard/courses" },
-      { label: "Programs", href: "/dashboard/programs" },
+      { label: "Overview",  href: "/dashboard/academics" },
+      { label: "Subjects",  href: "/dashboard/academics/subjects" },
+      { label: "Courses",   href: "/dashboard/courses" },
+      { label: "Programs",  href: "/dashboard/programs" },
     ],
   },
   {

@@ -229,6 +229,42 @@ export interface AttendanceSummary {
   percentage: number;
 }
 
+export interface AttendanceSessionSummary {
+  date: string;
+  subjectCode: string;
+  subjectName: string;
+  timeSlot: string;
+  presentCount: number;
+  absentCount: number;
+  totalCount: number;
+}
+
+export interface TimetableSlot {
+  id?: number;
+  day: string;
+  startTime: string;
+  endTime: string;
+  type: "CLASS" | "BREAK" | "FREE" | "LAB";
+  subjectCode?: string;
+  subjectName?: string;
+  facultyName?: string;
+  room?: string;
+  slotOrder?: number;
+}
+
+export interface TimetableData {
+  id: number;
+  program: string;
+  course: string;
+  batchYear: number;
+  semester: number;
+  academicYear: string;
+  status: "DRAFT" | "PUBLISHED";
+  slots: TimetableSlot[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const api = {
   programs: {
     create: (data: Record<string, unknown>) =>
@@ -354,6 +390,25 @@ export const api = {
       request<AdmissionData>(`/admissions/${admissionId}`),
   },
 
+  timetables: {
+    save: (data: Record<string, unknown>) =>
+      request<TimetableData>("/timetables", { method: "POST", body: JSON.stringify(data) }),
+
+    listByProgram: (program: string) =>
+      request<TimetableData[]>(`/timetables?program=${encodeURIComponent(program)}`),
+
+    get: (id: number) =>
+      request<TimetableData>(`/timetables/${id}`),
+
+    getByBatch: (program: string, course: string, batchYear: number, semester: number) =>
+      request<TimetableData>(
+        `/timetables/batch?program=${encodeURIComponent(program)}&course=${encodeURIComponent(course)}&batchYear=${batchYear}&semester=${semester}`
+      ),
+
+    delete: (id: number) =>
+      request<void>(`/timetables/${id}`, { method: "DELETE" }),
+  },
+
   attendance: {
     mark: (data: Record<string, unknown>) =>
       request<AttendanceRecord[]>("/attendance", { method: "POST", body: JSON.stringify(data) }),
@@ -369,6 +424,13 @@ export const api = {
       const byParam = batchYear !== undefined ? `&batchYear=${batchYear}` : "";
       return request<AttendanceSummary[]>(
         `/attendance/summary?program=${encodeURIComponent(program)}${byParam}&subjectCode=${encodeURIComponent(subjectCode)}`
+      );
+    },
+
+    recentSessions: (program: string, batchYear: number | undefined, limit = 30) => {
+      const byParam = batchYear !== undefined ? `&batchYear=${batchYear}` : "";
+      return request<AttendanceSessionSummary[]>(
+        `/attendance/recent-sessions?program=${encodeURIComponent(program)}${byParam}&limit=${limit}`
       );
     },
   },

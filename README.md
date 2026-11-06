@@ -1,4 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# University ERP Frontend
+
+Next.js App Router, React, TypeScript and Tailwind CSS frontend for the shared
+University ERP backend. Includes academic/admission/fee pages, Accountant login
+and overview, Admin user invitations and SMTP account management. Remaining
+Accountant feature pages are placeholders for future implementation.
+
+Install with `npm ci` and start with `npm run dev`. Set `BACKEND_URL` in a local
+`.env.local` file if the backend is not at `http://localhost:8080`. Example:
+
+```text
+BACKEND_URL=http://localhost:8081
+```
+
+Use the backend README for database migrations, server secrets and initial Admin
+provisioning. Do not commit local environment files or account credentials.
+
+This project was bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 

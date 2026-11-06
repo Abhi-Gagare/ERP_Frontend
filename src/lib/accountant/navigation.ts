@@ -1,0 +1,17 @@
+export const accountantNavigation = [
+  { label: "Dashboard", path: "" },
+  { label: "Student Fee Management", path: "fees" },
+  { label: "Fee Structures & Installments", path: "fee-structures" },
+  { label: "Fee Collection & Receipts", path: "collections" },
+  { label: "Pending Fees & Defaulters", path: "defaulters" },
+  { label: "Scholarships & Concessions", path: "scholarships" },
+  { label: "Refund Management", path: "refunds" },
+  { label: "Income & Expenses", path: "income-expenses" },
+  { label: "General Ledger", path: "ledger" },
+  { label: "Budget Management", path: "budgets" },
+  { label: "Payroll & Vendor Payments", path: "payroll" },
+  { label: "Reports & Analytics", path: "reports" },
+  { label: "Financial Approvals", path: "approvals" },
+  { label: "Settings", path: "settings" },
+  { label: "Audit Logs", path: "audit-logs" },
+] as const;

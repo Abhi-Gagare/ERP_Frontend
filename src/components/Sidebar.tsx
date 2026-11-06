@@ -169,7 +169,10 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-        {navItems.map((item) => {
+        {[...navItems, ...(user?.role === "ADMIN" ? [
+          { label: "User Management", href: "/dashboard/admin/users", icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M20 8v6M17 11h6" /></svg> },
+          { label: "Email / SMTP Settings", href: "/dashboard/admin/email-settings", icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18v14H3zM3 5l9 8 9-8" /></svg> },
+        ] as NavItem[] : [])].map((item) => {
           const isDropdown = Boolean(item.children);
           const parentActive = isDropdown
             ? item.children!.some((c) =>

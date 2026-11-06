@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { saveSession, isLoggedIn } from "@/lib/auth";
+import { saveSession, isLoggedIn, getUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function LoginPage() {
   useEffect(() => { setYear(new Date().getFullYear()); }, []);
 
   useEffect(() => {
-    if (isLoggedIn()) router.replace("/dashboard");
+    if (isLoggedIn()) router.replace(getUser()?.role === "ACCOUNTANT" ? "/accountant" : "/dashboard");
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       const data = await api.login(form.email, form.password);
       saveSession(data);
-      router.push("/dashboard");
+      router.push(data.user.role === "ACCOUNTANT" ? "/accountant" : "/dashboard");
     } catch (err: unknown) {
       const apiErr = err as { message?: string };
       setError(apiErr?.message ?? "Login failed. Please try again.");

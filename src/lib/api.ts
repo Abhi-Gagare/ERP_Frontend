@@ -9,7 +9,7 @@ export interface AuthResponse {
     id: number;
     email: string;
     fullName: string;
-    role: "STUDENT" | "FACULTY" | "ADMIN";
+    role: "STUDENT" | "FACULTY" | "ADMIN" | "ACCOUNTANT";
   };
 }
 
@@ -19,7 +19,7 @@ export interface ApiError {
   errors: string[];
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -34,19 +34,18 @@ async function request<T>(
     },
   });
 
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401 && !path.startsWith("/auth/")) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      window.location.href = window.location.pathname.startsWith("/accountant") ? "/accountant/login" : "/login";
     }
     throw { status: res.status, message: "Session expired. Please log in again.", errors: [] } as ApiError;
   }
 
   const contentType = res.headers.get("content-type") ?? "";
-  const hasBody = contentType.includes("application/json") || contentType.includes("text/");
-  const data = hasBody ? await res.json() : undefined;
+  const data = contentType.includes("application/json") && res.status !== 204 ? await res.json() : undefined;
   if (!res.ok) throw (data ?? { status: res.status, message: res.statusText, errors: [] }) as ApiError;
   return data as T;
 }

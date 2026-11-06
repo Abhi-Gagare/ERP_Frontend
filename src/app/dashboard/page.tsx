@@ -8,7 +8,7 @@ type User = {
   id: number;
   email: string;
   fullName: string;
-  role: "STUDENT" | "FACULTY" | "ADMIN";
+  role: "STUDENT" | "FACULTY" | "ADMIN" | "ACCOUNTANT";
 };
 
 const roleColors: Record<string, string> = {
@@ -37,6 +37,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoggedIn()) { router.replace("/login"); return; }
+    if (getUser()?.role === "ACCOUNTANT") { router.replace("/accountant"); return; }
     setUser(getUser());
   }, [router]);
 

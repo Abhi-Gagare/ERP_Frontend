@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import AwardApprovalsPage from "@/components/accountant/AwardApprovalsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Financial Approvals" />;
+  return <AwardApprovalsPage />;
 }

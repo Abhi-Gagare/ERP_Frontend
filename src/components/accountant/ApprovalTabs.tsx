@@ -1,0 +1,3 @@
+import Link from "next/link";
+const tabs=[{id:"awards",label:"Scholarships & concessions",href:"/accountant/approvals"},{id:"refunds",label:"Refund requests",href:"/accountant/approvals/refunds"},{id:"operations",label:"Income & expenses",href:"/accountant/approvals/operations"}];
+export default function ApprovalTabs({active}:{active:string}){return <nav aria-label="Approval types" className="flex flex-wrap gap-5 text-sm print:hidden">{tabs.map(t=><Link key={t.id} href={t.href} aria-current={active===t.id?"page":undefined} className={active===t.id?"font-medium text-indigo-700":"text-gray-500"}>{t.label}</Link>)}</nav>;}

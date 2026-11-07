@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import DisbursementsPage from "@/components/accountant/DisbursementsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Payroll & Vendor Payments" />;
+  return <DisbursementsPage />;
 }

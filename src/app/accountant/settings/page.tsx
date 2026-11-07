@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import SettingsPage from "@/components/accountant/SettingsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Settings" />;
+  return <SettingsPage />;
 }

@@ -25,8 +25,15 @@ initial Admin setup. Admins provision Accountant users; sign in at
 
 Dashboard, student fees, fee structures/installments, collections/receipts,
 defaulters, scholarships/concessions, refunds, income/expenses and financial
-approvals are implemented. Ledger, budget, payroll/vendors, reports, Accountant
-settings and audit-log screens remain placeholders.
+approvals, category budgets, staff/vendor payouts and a read-only cash-basis ledger
+are implemented. Payroll includes staff profiles, approved effective-dated fixed
+salary structures, monthly previews and saved payout breakdowns. Reports provide
+date-filtered cash summaries, comparisons/charts, collections, current balances,
+ageing, awards/refunds, budget variance and staff/vendor summaries with paged CSV
+export. Accountant Settings saves personal report defaults and displays current
+finance rules, and supports personal password changes that revoke old sessions.
+Audit Logs provides filtered, paged finance request activity, Accountant sign-ins
+and security/preferences events with page-only CSV export.
 
 Accountant routes, components and services are under `src/app/accountant`,
 `src/components/accountant` and `src/lib/accountant`. Financial scope and rules

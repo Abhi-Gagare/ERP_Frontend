@@ -12,6 +12,7 @@ export const accountantNavigation = [
   { label: "Payroll & Vendor Payments", path: "payroll", icon: "payroll" },
   { label: "Reports & Analytics", path: "reports", icon: "reports" },
   { label: "Financial Approvals", path: "approvals", icon: "approval" },
+  { label: "My Profile", path: "profile", icon: "students" },
   { label: "Settings", path: "settings", icon: "settings" },
   { label: "Audit Logs", path: "audit-logs", icon: "history" },
 ] as const;

@@ -1,115 +1,66 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { structureApi, type StructureCourse, type StructureDetail } from "@/lib/accountant/structures";
-import type { PageResponse } from "@/lib/api";
+import {useEffect,useState} from "react";
+import {structureApi,type StructureCourse,type StructureDetail,type StructureOptions} from "@/lib/accountant/structures";
 import FinanceIcon from "./FinanceIcon";
-
-const input = "mt-2 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:bg-gray-50";
-const money = (cents: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(cents / 100);
-type Head = { id: string; feeHead: string; amount: string };
-type Installment = { id: string; name: string; dueDate: string; heads: Head[] };
-const newHead = (): Head => ({ id: crypto.randomUUID(), feeHead: "", amount: "" });
-const newInstallment = (number: number): Installment => ({ id: crypto.randomUUID(), name: `Installment ${number}`, dueDate: "", heads: [newHead()] });
-const cents = (amount: string) => Math.round(Number(amount || 0) * 100);
-
-export default function StructureForm({ close, saved }: { close: () => void; saved: (s: StructureDetail) => void }) {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [retry, setRetry] = useState(0);
-  const [courses, setCourses] = useState<PageResponse<StructureCourse> | null>(null);
-  const [course, setCourse] = useState<StructureCourse | null>(null);
-  const [installments, setInstallments] = useState<Installment[]>(() => [newInstallment(1)]);
-  const [semester, setSemester] = useState("1");
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [batchScope, setBatchScope] = useState("all");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [error, setError] = useState("");
-  const [courseError, setCourseError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      setLoading(true); setCourseError("");
-      structureApi.courses(search, page, controller.signal)
-        .then(result => { if (!controller.signal.aborted) setCourses(result); })
-        .catch(() => { if (!controller.signal.aborted) setCourseError("Courses could not be loaded."); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    }, 250);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [search, page, retry]);
-
-  const lineCount = installments.reduce((sum, i) => sum + i.heads.length, 0);
-  const total = installments.reduce((sum, i) => sum + i.heads.reduce((subtotal, h) => subtotal + cents(h.amount), 0), 0);
-  const changeInstallment = (id: string, patch: Partial<Installment>) => setInstallments(rows => rows.map(row => row.id === id ? { ...row, ...patch } : row));
-  function importCourse() {
-    if (!course) return;
-    if (installments.some(i => i.heads.some(h => h.feeHead || h.amount)) && !window.confirm("Replace the current installment lines with the selected course fees?")) return;
-    const first = newInstallment(1);
-    first.heads = course.components.map(h => ({ id: crypto.randomUUID(), feeHead: h.feeHead, amount: String(h.amount) }));
-    setInstallments([first]);
-  }
-
-  return <section className="rounded-2xl border border-indigo-100 bg-white shadow-sm" aria-labelledby="structure-form-title">
-    <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5 sm:px-6"><h2 id="structure-form-title" className="flex items-center gap-2 font-semibold text-gray-900"><FinanceIcon name="structure" />Create fee structure</h2><button type="button" disabled={busy} onClick={close} className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">Cancel</button></div>
-    <form className="space-y-6 p-5 sm:p-6" onSubmit={async e => {
-      e.preventDefault(); if (busy) return;
-      if (!course) { setError("Select an active course before saving."); return; }
-      if ((start && !end) || (!start && end)) { setError("Enter both schedule dates or leave both blank."); return; }
-      const names = installments.map(i => i.name.trim().toLowerCase());
-      if (new Set(names).size !== names.length) { setError("Each installment needs a unique name."); return; }
-      const form = new FormData(e.currentTarget); setBusy(true); setError("");
-      try {
-        saved(await structureApi.create({ name: String(form.get("name")).trim(), courseId: course.id, academicYear: Number(year), semester: Number(semester),
-          batchYear: batchScope === "specific" ? Number(form.get("batchYear")) : null,
-          effectiveFrom: start || null, effectiveUntil: end || null, notes: String(form.get("notes")).trim(),
-          lines: installments.flatMap(i => i.heads.map(h => ({ feeHead: h.feeHead.trim(), installment: i.name.trim(), amount: Number(h.amount), dueDate: i.dueDate }))) }));
-      } catch (e) { setError((e as { message?: string }).message || "Unable to save structure."); setBusy(false); }
-    }}>
-      {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
-      <fieldset disabled={busy} className="min-w-0 space-y-6">
-        <section className="space-y-4" aria-labelledby="applicability-title">
-          <h3 id="applicability-title" className="text-sm font-semibold text-gray-900">1. Course &amp; applicability</h3>
-          <label className="block text-sm text-gray-600">Find active course <span className="text-red-600">*</span><input className={input} maxLength={100} placeholder="Search course name or program" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} /></label>
-          <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-100" aria-busy={loading}>
-            {courseError ? <div role="alert" className="p-4 text-sm text-red-700">{courseError}<button type="button" onClick={() => setRetry(v => v + 1)} className="ml-3 underline">Retry</button></div>
-              : loading ? <p role="status" className="p-4 text-sm text-gray-500">Loading courses…</p>
-              : courses?.content.length ? courses.content.map(c => <button type="button" key={c.id} aria-pressed={course?.id === c.id} onClick={() => {
-                if (course && course.id !== c.id && installments.some(i => i.heads.some(h => h.feeHead || h.amount))) {
-                  if (!window.confirm("Changing course clears existing fee lines. Continue?")) return;
-                  setInstallments([newInstallment(1)]);
-                }
-                setCourse(c);
-              }} className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left text-sm last:border-0 ${course?.id === c.id ? "bg-indigo-50 text-indigo-800" : "hover:bg-gray-50"}`}><span><span className="font-medium">{c.name}</span><span className="mt-1 block text-xs text-gray-500">{c.program}</span></span>{course?.id === c.id && <FinanceIcon name="check" />}</button>)
-                : <div className="p-5 text-sm"><p className="font-medium text-gray-700">{search ? "No matching active courses" : "No active courses available"}</p><p className="mt-2 text-gray-500">{search ? "Try another search or clear the search field." : "Ask your Admin to add or activate a course in the shared course catalog."}</p><button type="button" onClick={() => { setSearch(""); setPage(0); setRetry(v => v + 1); }} className="mt-3 font-medium text-indigo-700">{search ? "Clear search" : "Refresh courses"}</button></div>}
-          </div>
-          {(courses?.totalPages || 0) > 1 && <div className="flex items-center gap-4 text-xs text-gray-500"><button type="button" disabled={page === 0 || loading} onClick={() => setPage(p => p - 1)} className="disabled:opacity-40">Previous courses</button><span>Page {page + 1} of {courses?.totalPages}</span><button type="button" disabled={!courses || page + 1 >= courses.totalPages || loading} onClick={() => setPage(p => p + 1)} className="disabled:opacity-40">Next courses</button></div>}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <label className="text-sm text-gray-600">Selected course<input readOnly value={course?.name || "Select a course above"} className={`${input} bg-gray-50`} /></label>
-            <label className="text-sm text-gray-600">Program / department (from course)<input readOnly value={course?.program || "—"} className={`${input} bg-gray-50`} /></label>
-            <label className="text-sm text-gray-600">Eligible batch<select name="batchScope" value={batchScope} onChange={e => setBatchScope(e.target.value)} className={input}><option value="all">All batches</option><option value="specific">Specific admission batch</option></select></label>
-            {batchScope === "specific" && <label className="text-sm text-gray-600">Admission batch year <span className="text-red-600">*</span><input name="batchYear" type="number" required min={2000} max={2200} placeholder="e.g. 2026" className={input} /></label>}
-          </div>
-        </section>
-
-        <section className="space-y-4 border-t border-gray-100 pt-6" aria-labelledby="period-title">
-          <h3 id="period-title" className="text-sm font-semibold text-gray-900">2. Structure &amp; academic period</h3>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <label className="text-sm text-gray-600">Structure name <span className="text-red-600">*</span><input name="name" required maxLength={120} placeholder="e.g. B.Tech Semester 3 · 2026–27" className={input} /></label>
-            <label className="text-sm text-gray-600">Academic starting year <span className="text-red-600">*</span><input name="year" type="number" min={2000} max={2200} required value={year} onChange={e => setYear(e.target.value)} className={input} /><span className="mt-1 block text-xs text-gray-400">{year ? `${year}–${Number(year) + 1}` : "Enter starting year"}</span></label>
-            <label className="text-sm text-gray-600">Semester <span className="text-red-600">*</span><input name="semester" type="number" min={1} max={100} required value={semester} onChange={e => setSemester(e.target.value)} className={input} /></label>
-            <label className="text-sm text-gray-600">Study year (from semester)<input readOnly value={semester ? `Year ${Math.ceil(Number(semester) / 2)}` : "—"} className={`${input} bg-gray-50`} /><span className="mt-1 block text-xs text-gray-400">For courses with two semesters per year.</span></label>
-            <label className="text-sm text-gray-600">Schedule start (optional)<input name="effectiveFrom" type="date" value={start} max={end || undefined} onChange={e => setStart(e.target.value)} className={input} /></label>
-            <label className="text-sm text-gray-600">Schedule end (optional)<input name="effectiveUntil" type="date" value={end} min={start || undefined} onChange={e => setEnd(e.target.value)} className={input} /></label>
-          </div>
-        </section>
-
+import FinanceMultiSelect from "./FinanceMultiSelect";
+const input="mt-2 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-100";
+const money=(cents:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(cents/100);
+type Head={id:string;feeHead:string;amount:string};
+type Installment={id:string;name:string;dueDate:string;heads:Head[]};
+const newHead=():Head=>({id:crypto.randomUUID(),feeHead:"",amount:""});
+const newInstallment=(n:number):Installment=>({id:crypto.randomUUID(),name:`Installment ${n}`,dueDate:"",heads:[newHead()]});
+const cents=(amount:string)=>Math.round(Number(amount||0)*100);
+export default function StructureForm({close,saved,initial}:{initial?:StructureDetail;close:()=>void;saved:(s:StructureDetail)=>void}){
+ const [search,setSearch]=useState(''),[page,setPage]=useState(0),[retry,setRetry]=useState(0);
+ const [catalog,setCatalog]=useState<StructureCourse[]>([]),[known,setKnown]=useState<StructureCourse[]>([]),[totalCourses,setTotalCourses]=useState(0),[hasMore,setHasMore]=useState(false);
+ const [selectedCourses,setSelectedCourses]=useState<StructureCourse[]>(()=>initial?((initial.structure.courseScope==='LEGACY'?[initial.structure.courseId!]:initial.structure.courseIds).map((id,i)=>({id,name:initial.structure.courseNames[i]||initial.structure.courseName,program:initial.structure.program,components:[],code:'',durationMonths:0}))):[]),[scope,setScope]=useState(initial?.structure.courseScope==='UNIVERSITY'?'UNIVERSITY':'SELECTED');
+ const [yearAll,setYearAll]=useState(!initial?.structure.studyYears.length&&!initial?.structure.includeFinalYear),[studyYears,setStudyYears]=useState<string[]>([...(initial?.structure.studyYears||[]).map(String),...(initial?.structure.includeFinalYear?['FINAL']:[])]);
+ const [semesterAll,setSemesterAll]=useState(!initial?.structure.semesters.length&&!initial?.structure.semester),[semesters,setSemesters]=useState<string[]>((initial?.structure.semesters.length?initial.structure.semesters:initial?.structure.semester?[initial.structure.semester]:[]).map(String));
+ const [batchAll,setBatchAll]=useState(!initial?.structure.batchYears.length&&!initial?.structure.batchYear),[batches,setBatches]=useState<string[]>((initial?.structure.batchYears.length?initial.structure.batchYears:initial?.structure.batchYear?[initial.structure.batchYear]:[]).map(String));
+ const [options,setOptions]=useState<StructureOptions|null>(null),[optionLoading,setOptionLoading]=useState(true),[optionError,setOptionError]=useState('');
+ const [installments,setInstallments]=useState<Installment[]>(()=>initial?[...new Set(initial.lines.map(l=>l.installment))].map(name=>({id:crypto.randomUUID(),name,dueDate:initial.lines.find(l=>l.installment===name)!.dueDate,heads:initial.lines.filter(l=>l.installment===name).map(l=>({id:crypto.randomUUID(),feeHead:l.feeHead,amount:String(l.amount)}))})):[newInstallment(1)]);
+ const [year,setYear]=useState(String(initial?.structure.academicYear||new Date().getFullYear())),[start,setStart]=useState(initial?.structure.effectiveFrom||''),[end,setEnd]=useState(initial?.structure.effectiveUntil||'');
+ const [error,setError]=useState(''),[courseError,setCourseError]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
+ const course=selectedCourses[0]||null;
+ const selectedKey=scope==='SELECTED'?selectedCourses.map(c=>c.id).sort((a,b)=>a-b).join(','):'';
+ function refresh(){setPage(0);setRetry(v=>v+1);}
+ useEffect(()=>{const run=()=>{setPage(0);setRetry(v=>v+1);};window.addEventListener('focus',run);return()=>window.removeEventListener('focus',run);},[]);
+ useEffect(()=>{const c=new AbortController();const timer=setTimeout(()=>{setLoading(true);setCourseError('');structureApi.courses(search,page,c.signal).then(r=>{if(c.signal.aborted)return;setCatalog(old=>page===0?r.content:[...new Map([...old,...r.content].map(c=>[c.id,c])).values()]);setKnown(old=>[...new Map([...old,...r.content].map(c=>[c.id,c])).values()]);setTotalCourses(r.totalElements);setHasMore(page+1<r.totalPages);}).catch(()=>{if(!c.signal.aborted)setCourseError('Courses could not be loaded. Refresh to retry.');}).finally(()=>{if(!c.signal.aborted)setLoading(false);});},200);return()=>{clearTimeout(timer);c.abort();};},[search,page,retry]);
+ useEffect(()=>{const c=new AbortController();const timer=setTimeout(()=>{setOptionLoading(true);setOptionError('');structureApi.options(selectedKey?selectedKey.split(',').map(Number):[],c.signal).then(r=>{if(!c.signal.aborted)setOptions(r);}).catch(e=>{if(!c.signal.aborted)setOptionError(e.message||'Academic options could not be loaded');}).finally(()=>{if(!c.signal.aborted)setOptionLoading(false);});},100);return()=>{clearTimeout(timer);c.abort();};},[selectedKey,retry]);
+ const finalYear=!yearAll&&studyYears.includes('FINAL');
+ const years=yearAll?[]:studyYears.filter(v=>v!=='FINAL').map(Number);
+ const eligibleSemesters=(options?.semesters||[]).filter(n=>yearAll||years.includes(Math.ceil(n/2))||(finalYear&&options?.finalSemesters.includes(n)));
+ const selectionError=!yearAll&&!studyYears.length?'Choose study years, final year, or explicitly select All study years.':!semesterAll&&!semesters.length?'Choose semesters or explicitly select All semesters.':!batchAll&&!batches.length?'Choose batches or explicitly select All admission batches.':!yearAll&&years.some(y=>!options?.studyYears.includes(y))?'Selected study years are unavailable for these courses. Update the selection.':!semesterAll&&semesters.some(v=>!eligibleSemesters.includes(Number(v)))?'Selected semesters do not match the chosen courses and study years. Update the selection.':!batchAll&&batches.some(v=>!options?.batchYears.includes(Number(v)))?'Selected batches are unavailable for these courses. Update the selection.':'';
+ const lineCount=installments.reduce((sum,i)=>sum+i.heads.length,0);
+ const total=installments.reduce((sum,i)=>sum+i.heads.reduce((a,h)=>a+cents(h.amount),0),0);
+ const changeInstallment=(id:string,patch:Partial<Installment>)=>setInstallments(rows=>rows.map(r=>r.id===id?{...r,...patch}:r));
+ function importCourse(){if(!course)return;if(installments.some(i=>i.heads.some(h=>h.feeHead||h.amount))&&!window.confirm('Replace current lines with this source course fee schedule?'))return;const first=newInstallment(1);first.heads=course.components.map(h=>({id:crypto.randomUUID(),feeHead:h.feeHead,amount:String(h.amount)}));setInstallments([first]);}
+ const courseChoices=[...new Map([...selectedCourses,...catalog].map(c=>[c.id,c])).values()].map(c=>({value:String(c.id),label:c.name,description:`${c.code||''} / ${c.program} / ${c.durationMonths} months`}));
+ return <section className="rounded-2xl border border-indigo-100 bg-white shadow-sm" aria-labelledby="structure-form-title"><div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5 sm:px-6"><h2 id="structure-form-title" className="flex items-center gap-2 font-semibold text-gray-900"><FinanceIcon name="structure"/>{initial?'Edit fee structure':'Create fee structure'}</h2><button type="button" disabled={busy} onClick={close} className="rounded-lg px-3 py-2 text-sm text-gray-500">Cancel</button></div>
+ <form className="space-y-6 p-5 sm:p-6" onSubmit={async e=>{e.preventDefault();if(busy)return;if(scope==='SELECTED'&&!selectedCourses.length){setError('Choose courses or explicitly select All active courses.');return;}if(selectionError||optionLoading||optionError){setError(selectionError||optionError||'Wait for academic options to load');return;}if((start&&!end)||(!start&&end)){setError('Enter both schedule dates or leave both blank.');return;}const names=installments.map(i=>i.name.trim().toLowerCase());if(new Set(names).size!==names.length){setError('Each installment needs a unique name.');return;}const form=new FormData(e.currentTarget);setBusy(true);setError('');try{saved(await structureApi.save(initial?.structure,{name:String(form.get('name')).trim(),courseId:null,courseScope:scope,courseIds:scope==='SELECTED'?selectedCourses.map(c=>c.id):[],studyYears:years,includeFinalYear:finalYear,semester:0,semesters:semesterAll?[]:semesters.map(Number),batchYear:null,batchYears:batchAll?[]:batches.map(Number),academicYear:Number(year),effectiveFrom:start||null,effectiveUntil:end||null,notes:String(form.get('notes')).trim(),lines:installments.flatMap(i=>i.heads.map(h=>({feeHead:h.feeHead.trim(),installment:i.name.trim(),amount:Number(h.amount),dueDate:i.dueDate})))}));}catch(e){setError((e as {message?:string}).message||'Unable to save structure');setBusy(false);}}}>
+ {error&&<p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+ <fieldset disabled={busy} className="min-w-0 space-y-6"><section className="space-y-4" aria-labelledby="applicability-title"><h3 id="applicability-title" className="text-sm font-semibold text-gray-900">1. Students covered by this plan</h3>
+ <FinanceMultiSelect label="Courses" allLabel="All active courses / whole university" options={courseChoices} values={selectedCourses.map(c=>String(c.id))} all={scope==='UNIVERSITY'} onAll={()=>{setScope('UNIVERSITY');setSelectedCourses([]);}} onChange={values=>{if(values.length>200){setError('Select at most 200 courses, or choose All active courses.');return;}setScope('SELECTED');setSelectedCourses(values.map(v=>known.find(c=>c.id===Number(v))||selectedCourses.find(c=>c.id===Number(v))).filter((c):c is StructureCourse=>!!c));}} search={search} onSearch={v=>{setSearch(v);setPage(0);}} onOpen={refresh} onRefresh={refresh} onMore={()=>setPage(p=>p+1)} hasMore={hasMore} loading={loading} error={courseError} disabled={busy}/>
+ <p className="text-xs text-gray-500">{totalCourses} active courses match the current search. New active courses appear when this list refreshes. Inactive/upcoming courses are not assignable. Adding a course is done in Admin.</p>
+ <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+ <FinanceMultiSelect label="Study years" allLabel="All study years" options={[...(options?.studyYears||[]).map(y=>({value:String(y),label:`Year ${y}`})),...(options?.finalSemesters.length?[{value:'FINAL',label:'Final year (per course)'}]:[])]} all={yearAll} values={studyYears} onAll={()=>{setYearAll(true);setStudyYears([]);}} onChange={v=>{setYearAll(false);setStudyYears(v);}} loading={optionLoading} disabled={busy}/>
+ <FinanceMultiSelect label="Semesters" allLabel="All semesters in eligible years" options={eligibleSemesters.map(n=>({value:String(n),label:`Semester ${n}`}))} all={semesterAll} values={semesters} onAll={()=>{setSemesterAll(true);setSemesters([]);}} onChange={v=>{setSemesterAll(false);setSemesters(v);}} loading={optionLoading} disabled={busy}/>
+ <FinanceMultiSelect label="Admission batches" allLabel="All admission batches" options={(options?.batchYears||[]).map(n=>({value:String(n),label:`Batch ${n}`}))} all={batchAll} values={batches} onAll={()=>{setBatchAll(true);setBatches([]);}} onChange={v=>{setBatchAll(false);setBatches(v);}} loading={optionLoading} disabled={busy}/>
+ </div>
+ {optionError&&<p role="alert" className="text-sm text-red-700">{optionError}<button type="button" onClick={refresh} className="ml-3 underline">Refresh academic data</button></p>}
+ {selectionError&&<p role="status" className="text-sm text-amber-800">{selectionError}</p>}
+ {!!options?.unconfiguredCourses&&<p className="text-xs text-amber-800">{options.unconfiguredCourses} courses need a usable duration in Admin before their semester/year options can be calculated.</p>}
+ <p className="text-xs text-gray-500">Semesters come from selected course durations under the existing two-semesters-per-year model: a 3-year course has 6 semesters, a 4-year course has 8. Years and semesters narrow the same students; batches mean their admission years. Review the frozen student preview before assignment.</p>
+ </section>
+ <section className="space-y-4 border-t border-gray-100 pt-6" aria-labelledby="period-title"><h3 id="period-title" className="text-sm font-semibold text-gray-900">2. Structure &amp; academic period</h3><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+ <label className="text-sm text-gray-600">Structure name<input name="name" defaultValue={initial?.structure.name} required maxLength={120} placeholder="e.g. Common examination fee" className={input}/></label>
+ <label className="text-sm text-gray-600">Academic starting year<input name="year" type="number" required min={2000} max={2200} value={year} onChange={e=>setYear(e.target.value)} className={input}/><span className="mt-1 block text-xs text-gray-400">{year?`${year}-${Number(year)+1}`:'Enter starting year'}</span></label>
+ <label className="text-sm text-gray-600">Schedule start (optional)<input name="effectiveFrom" type="date" value={start} max={end||undefined} onChange={e=>setStart(e.target.value)} className={input}/></label>
+ <label className="text-sm text-gray-600">Schedule end (optional)<input name="effectiveUntil" type="date" value={end} min={start||undefined} onChange={e=>setEnd(e.target.value)} className={input}/></label>
+ </div></section>
         <section className="space-y-4 border-t border-gray-100 pt-6" aria-labelledby="installments-title">
           <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="installments-title" className="text-sm font-semibold text-gray-900">3. Fee heads &amp; installment schedule</h3><span className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-500">Currency: INR (₹)</span></div>
-          {course && <div className="rounded-xl bg-indigo-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-medium text-indigo-900">{course.components.length ? `${course.components.length} fee heads available from Admin course setup` : "No fee heads configured for this course. Add fee heads below."}</p>{course.components.length > 0 && <button type="button" onClick={importCourse} className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-indigo-700">Import course fees</button>}</div>{course.components.length > 0 && <details className="mt-3 text-xs text-indigo-800"><summary className="cursor-pointer">Review source amounts and frequency</summary><ul className="mt-2 space-y-1">{course.components.map((h, i) => <li key={i}>{h.feeHead}: {money(cents(String(h.amount)))} · {h.frequency}</li>)}</ul><p className="mt-2">Review amounts for this academic period. Import places the amounts in one installment; split them before adding additional installments.</p></details>}</div>}
+          {course && <div className="rounded-xl bg-indigo-50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-medium text-indigo-900">{course.components.length ? `${course.components.length} fee heads available from ${course.name}` : "No fee heads configured for this course. Add fee heads below."}</p>{course.components.length > 0 && <button type="button" onClick={importCourse} className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-indigo-700">Import course fees</button>}</div>{course.components.length > 0 && <details className="mt-3 text-xs text-indigo-800"><summary className="cursor-pointer">Review source amounts and frequency</summary><ul className="mt-2 space-y-1">{course.components.map((h, i) => <li key={i}>{h.feeHead}: {money(cents(String(h.amount)))} · {h.frequency}</li>)}</ul><p className="mt-2">Review amounts for this academic period. Import places the amounts in one installment; split them before adding additional installments.</p></details>}</div>}
           {installments.map((installment, index) => {
             const subtotal = installment.heads.reduce((sum, h) => sum + cents(h.amount), 0);
             return <div key={installment.id} className="min-w-0 rounded-xl border border-gray-200">
@@ -128,8 +79,8 @@ export default function StructureForm({ close, saved }: { close: () => void; sav
           <button type="button" disabled={lineCount >= 200} onClick={() => setInstallments(rows => [...rows, newInstallment(rows.length + 1)])} className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-4 py-2.5 text-sm font-medium text-indigo-700 disabled:opacity-40"><FinanceIcon name="structure" className="h-4 w-4" />Add installment</button>
         </section>
 
-        <section className="border-t border-gray-100 pt-6"><label className="block text-sm text-gray-600">Notes (optional)<textarea name="notes" maxLength={1000} rows={3} placeholder="Internal notes about this fee structure" className={input} /></label></section>
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4"><div><p className="text-xs text-gray-500">{installments.length} installments · {lineCount} fee lines · Draft</p><p className="mt-1 text-xl font-bold text-gray-900">Structure total: {money(total)}</p></div><button disabled={!course || busy || !!courseError} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40">{busy ? "Saving…" : "Save draft structure"}</button></div>
+        <section className="border-t border-gray-100 pt-6"><label className="block text-sm text-gray-600">Notes (optional)<textarea name="notes" defaultValue={initial?.structure.notes||""} maxLength={1000} rows={3} placeholder="Internal notes about this fee structure" className={input} /></label></section>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4"><div><p className="text-xs text-gray-500">{installments.length} installments · {lineCount} fee lines · Draft</p><p className="mt-1 text-xl font-bold text-gray-900">Structure total: {money(total)}</p></div><button disabled={busy || optionLoading || !!optionError || !!selectionError || (scope==="SELECTED"&&!selectedCourses.length)} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40">{busy ? "Saving…" : initial ? "Save changes" : "Save draft structure"}</button></div>
       </fieldset>
     </form>
   </section>;

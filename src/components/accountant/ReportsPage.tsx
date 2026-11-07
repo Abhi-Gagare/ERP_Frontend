@@ -1,5 +1,6 @@
 "use client";
 
+import FinanceHealthPanel from "./FinanceHealthPanel";
 import Link from "next/link";
 import ReportDetails from "./ReportDetails";
 import {settingsApi,type FinanceSettings} from "@/lib/accountant/settings";
@@ -23,7 +24,7 @@ function ReportsContent({initialFrom,initialUntil,initialSection}:{initialFrom:s
  const [filters,setFilters]=useState(dates);
  const [data,setData]=useState<Report|null>(null),[error,setError]=useState(""),[loading,setLoading]=useState(true);
  useEffect(()=>{const controller=new AbortController();
- request<Report>(`/finance/reports?${new URLSearchParams(filters)}`,{signal:controller.signal}).then(r=>{if(!controller.signal.aborted)setData(r);}).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Could not load reports");}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();
+ request<Report>(`/finance/reports?${new URLSearchParams(filters)}`,{signal:controller.signal}).then(r=>{if(!controller.signal.aborted)setData(r);}).catch(e=>{if(!controller.signal.aborted)setError((e as {message?:string}).message||"Could not load reports");}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();
  },[filters]);
  function download(){if(!data)return;
   const rows:(string|number)[][]=[["Cash-basis finance report",data.from,data.until],["Section","Label","Transactions","Inflow INR","Outflow INR","Net INR"],["Total","All verified transactions",data.totals.transactions,data.totals.inflow,data.totals.outflow,data.totals.net],...[["Previous period",data.previousPeriod],["Previous year",data.previousYear]].map(([name,value])=>{const r=value as Totals&{from:string;until:string};return [name as string,`${r.from} to ${r.until}`,r.transactions,r.inflow,r.outflow,r.net];}),...data.monthly.map(r=>["Month",r.month,r.transactions,r.inflow,r.outflow,r.net]),...data.sources.map(r=>["Source",r.source,r.transactions,r.inflow,r.outflow,r.net]),["Category code","Category","Kind","Amount INR"],...data.categories.map(r=>[r.code,r.name,r.kind,r.amount])];
@@ -32,6 +33,7 @@ function ReportsContent({initialFrom,initialUntil,initialSection}:{initialFrom:s
  }
  return <div className="space-y-6">
   <div><h1 className="text-2xl font-semibold text-gray-900">Reports &amp; Analytics</h1><p className="mt-1 text-sm text-gray-500">Verified cash movements from the shared General Ledger.</p></div>
+  <FinanceHealthPanel/>
   <form onSubmit={e=>{e.preventDefault();setLoading(true);setError("");setData(null);setFilters({...dates});}} className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4 print:hidden">
    <label className="text-sm text-gray-700">From<input aria-label="Report from" className={input} type="date" required value={dates.from} max={dates.until} onChange={e=>setDates({...dates,from:e.target.value})}/></label>
    <label className="text-sm text-gray-700">Until<input aria-label="Report until" className={input} type="date" required value={dates.until} min={dates.from} onChange={e=>setDates({...dates,until:e.target.value})}/></label>

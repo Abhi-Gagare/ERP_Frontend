@@ -32,6 +32,10 @@ date-filtered cash summaries, comparisons/charts, collections, current balances,
 ageing, awards/refunds, budget variance and staff/vendor summaries with paged CSV
 export. Accountant Settings saves personal report defaults and displays current
 finance rules, and supports personal password changes that revoke old sessions.
+New fee plans support the whole university or multiple courses, all/selected study
+years and final-year targeting, with a frozen preview before batched assignment.
+Existing single-course plans keep their original program/semester rules. See
+backend migration 021 and its documented course-matching/year conventions.
 Audit Logs provides filtered, paged finance request activity, Accountant sign-ins
 and security/preferences events with page-only CSV export.
 
@@ -49,3 +53,9 @@ npm run build
 
 Keep source, lockfiles and regression checks in Git. Local credentials, runtime
 screenshots/logs, `node_modules`, `.next` and build output must stay excluded.
+
+
+Fee cohort multi-selection: course, study-year, semester and admission-batch
+selectors support All or multiple values. Semester/year choices derive from active
+course duration (two semesters per year); admission batches come from approved
+admissions. Course catalogs refresh on opening/focus and support search/pagination.

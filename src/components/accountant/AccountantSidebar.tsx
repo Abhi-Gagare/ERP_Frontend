@@ -36,7 +36,7 @@ export default function AccountantSidebar({ fullName }: { fullName: string }) {
       <div className={`${menuOpen ? "block" : "hidden"} shrink-0 border-t border-gray-100 p-3 md:block`}>
         <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-gray-50">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{fullName.charAt(0)}</div>
-          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-gray-900">{fullName}</p><p className="text-xs text-gray-400">ACCOUNTANT</p></div>
+          <div className="min-w-0 flex-1"><Link href="/accountant/profile" className="block truncate text-sm font-medium text-gray-900" onClick={()=>setMenuOpen(false)}>{fullName}</Link><p className="text-xs text-gray-400">ACCOUNTANT</p></div>
           <button title="Sign out" aria-label="Sign out" onClick={() => { clearSession(); router.replace("/accountant/login"); }} className="rounded p-1 text-gray-400 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H4v14h5M14 8l4 4-4 4M8 12h10" /></svg>
           </button>

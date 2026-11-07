@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import BudgetsPage from "@/components/accountant/BudgetsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Budget Management" />;
+  return <BudgetsPage />;
 }

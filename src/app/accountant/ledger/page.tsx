@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import GeneralLedgerPage from "@/components/accountant/GeneralLedgerPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="General Ledger" />;
+  return <GeneralLedgerPage />;
 }

@@ -1,5 +1,5 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import FeeStructuresPage from "@/components/accountant/FeeStructuresPage";
 
-export default function Page() {
-  return <FeaturePlaceholder title="Fee Structures & Installments" />;
-}
+export const instant = false;
+
+export default function Page(){return <FeeStructuresPage/>;}

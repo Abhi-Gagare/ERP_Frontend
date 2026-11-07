@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import ActivityPage from "@/components/accountant/ActivityPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Audit Logs" />;
+  return <ActivityPage />;
 }

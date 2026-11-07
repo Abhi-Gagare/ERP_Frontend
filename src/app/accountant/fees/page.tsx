@@ -1,5 +1,5 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import StudentFeesPage from "@/components/accountant/StudentFeesPage";
 
-export default function Page() {
-  return <FeaturePlaceholder title="Student Fee Management" />;
-}
+export const instant = false;
+
+export default function Page(){return <StudentFeesPage/>;}

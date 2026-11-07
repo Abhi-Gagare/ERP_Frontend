@@ -1,5 +1,5 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import DefaultersPage from "@/components/accountant/DefaultersPage";
 
-export default function Page() {
-  return <FeaturePlaceholder title="Pending Fees & Defaulters" />;
-}
+export const instant = false;
+
+export default function Page(){return <DefaultersPage/>;}

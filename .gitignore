@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+*.key
+*.log
+/.runtime/
 
 # debug
 npm-debug.log*
@@ -39,3 +42,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local testing/presentation material and editor files
+[Gg][Uu][Ii][Dd][Ee].[Mm][Dd]
+ACCOUNTANT_DEMO_GUIDE.md
+/.idea/
+/.vscode/
+*.dump
+*.backup
+*.tmp
+*.swp
+Thumbs.db

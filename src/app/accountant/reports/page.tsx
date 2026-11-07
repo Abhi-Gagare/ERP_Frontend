@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import ReportsPage from "@/components/accountant/ReportsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Reports & Analytics" />;
+  return <ReportsPage />;
 }

@@ -1,5 +1,5 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import CollectionsPage from "@/components/accountant/CollectionsPage";
 
-export default function Page() {
-  return <FeaturePlaceholder title="Fee Collection & Receipts" />;
-}
+export const instant = false;
+
+export default function Page(){return <CollectionsPage/>;}

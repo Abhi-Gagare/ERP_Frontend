@@ -1,5 +1,7 @@
-import FeaturePlaceholder from "@/components/accountant/FeaturePlaceholder";
+import RefundsPage from "@/components/accountant/RefundsPage";
+
+export const instant = false;
 
 export default function Page() {
-  return <FeaturePlaceholder title="Refund Management" />;
+  return <RefundsPage />;
 }
